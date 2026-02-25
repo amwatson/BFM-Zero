@@ -39,6 +39,35 @@ class MotionlibMode(Enum):
     directory = 2
 
 
+def _unwrap_np_object(value):
+    """Unwrap object arrays saved in npz into native Python objects when possible."""
+    if isinstance(value, np.ndarray) and value.dtype == object and value.shape == ():
+        return value.item()
+    return value
+
+
+def load_motion_archive(path: str):
+    """Load motion archive from either .pkl or .npz.
+
+    For .npz, supported layouts are:
+    - a single key (e.g. arr_0/data/motions) containing a dict of motions
+    - one key per motion where each value stores that motion dictionary
+    """
+    if path.endswith(".npz"):
+        with np.load(path, allow_pickle=True) as data:
+            if len(data.files) == 1:
+                first = _unwrap_np_object(data[data.files[0]])
+                if isinstance(first, dict):
+                    return first
+
+            motion_dict = {}
+            for key in data.files:
+                motion_dict[key] = _unwrap_np_object(data[key])
+            return motion_dict
+
+    return joblib.load(path)
+
+
 def to_torch(tensor):
     if torch.is_tensor(tensor):
         return tensor
@@ -72,10 +101,11 @@ class MotionLibBase():
     def load_data(self, motion_file, min_length=-1, im_eval = False):
         if osp.isfile(motion_file):
             self.mode = MotionlibMode.file
-            self._motion_data_load = joblib.load(motion_file)
+            self._motion_data_load = load_motion_archive(motion_file)
         else:
             self.mode = MotionlibMode.directory
-            self._motion_data_load = glob.glob(osp.join(motion_file, "*.pkl"))
+            self._motion_data_load = sorted(glob.glob(osp.join(motion_file, "*.pkl")))
+            self._motion_data_load.extend(sorted(glob.glob(osp.join(motion_file, "*.npz"))))
         
         data_list = self._motion_data_load
         if self.mode == MotionlibMode.file:
@@ -95,7 +125,7 @@ class MotionLibBase():
         
         self._num_unique_motions = len(self._motion_data_list)
         if self.mode == MotionlibMode.directory:
-            self._motion_data_load = joblib.load(self._motion_data_load[0]) # set self._motion_data_load to a sample of the data 
+            self._motion_data_load = load_motion_archive(self._motion_data_load[0]) # set self._motion_data_load to a sample of the data 
         logger.info(f"Loaded {self._num_unique_motions} motions")
 
     def setup_constants(self, fix_height = FixHeightMode.full_fix, multi_thread = True):
@@ -507,7 +537,7 @@ class MotionLibBase():
             curr_file = motion_data_list[f]
             if not isinstance(curr_file, dict) and osp.isfile(curr_file):
                 key = motion_data_list[f].split("/")[-1].split(".")[0]
-                curr_file = joblib.load(curr_file)[key]
+                curr_file = load_motion_archive(curr_file)[key]
             
             seq_len = curr_file['root_trans_offset'].shape[0]
             if max_len == -1 or seq_len < max_len:

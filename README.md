@@ -69,7 +69,7 @@ uv sync
 
 ## Data
 
-- **Motion data**: Included via Git LFS in `humanoidverse/data/` after `git lfs pull`. `lafan_29dof.pkl` is for evaluation; `lafan_29dof_10s-clipped.pkl` is for training. 
+- **Motion data**: Included via Git LFS in `humanoidverse/data/` after `git lfs pull`. `lafan_29dof.pkl` is for evaluation; `lafan_29dof_10s-clipped.pkl` is for training. Motion archives can now be provided as `.pkl` or `.npz` (for either `motion_file` or `--data_path`).
 
 
 ## Training
@@ -145,6 +145,7 @@ uv run python -m humanoidverse.reward_inference --help
 - `--model_folder`: Path to the trained model directory (must contain `checkpoint/` and `config.json`).
 - `--data_path` (optional): Override the default LaFan data path.
 - `--headless` (default: `True`): Run without GUI; use `--no-headless` to show the viewer.
+- `--device` (default: `cuda`): On machines without CUDA (e.g., many macOS setups), use `--device cpu`.
 - `--save_mp4`: Save rendered videos.
 
 **Output:** All inference scripts export the policy to ONNX (`{model_name}.onnx`) in their respective output subdirectories under `exported/`.

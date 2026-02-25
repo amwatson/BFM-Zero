@@ -22,10 +22,18 @@ else:
     HUMANOIDVERSE_DIR = Path(__file__).resolve().parent
 
 
+def resolve_device(device: str) -> str:
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        print("CUDA requested but not available; falling back to CPU. Use --device cpu to silence this warning.")
+        return "cpu"
+    return device
+
+
 def main(model_folder: Path, data_path: Path | None = None, headless: bool = True, device="cuda", simulator: str = "isaacsim", save_mp4: bool=False, disable_dr: bool = False, disable_obs_noise: bool = False, motion_list: list[int] = [25]):
     # motion_list: motion ids to evaluate (default [25])
     
     model_folder = Path(model_folder)
+    device = resolve_device(device)
 
     model = load_model_from_checkpoint_dir(model_folder / "checkpoint", device=device)
     model.to(device)
