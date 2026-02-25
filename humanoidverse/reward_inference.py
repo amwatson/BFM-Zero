@@ -29,8 +29,16 @@ if getattr(humanoidverse, "__file__", None) is not None:
 else:
     HUMANOIDVERSE_DIR = Path(__file__).parent.parent.parent
 
+def resolve_device(device: str) -> str:
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        print("CUDA requested but not available; falling back to CPU. Use --device cpu to silence this warning.")
+        return "cpu"
+    return device
+
+
 def main(model_folder: Path, data_path: Path | None = None, headless: bool = True, device="cuda", simulator: str = "isaacsim", save_mp4: bool=False, episode_length: int=500, video_folder: str | None = None, disable_dr: bool = False, disable_obs_noise: bool = False, num_samples: int = 150_000, n_inferences: int = 1, skip_rollouts: bool = False):
     model_folder = Path(model_folder)
+    device = resolve_device(device)
     video_folder = Path(video_folder) if video_folder is not None else model_folder / "reward_inference" / "videos"
     video_folder.mkdir(parents=True, exist_ok=True)
 

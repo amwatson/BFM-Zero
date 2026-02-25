@@ -21,6 +21,7 @@ dependencies = [
     "loguru>=0.7.3",
     "lxml>=5.3.2",
     "mediapy>=1.2.3",
+    "imageio>=2.37.0",
     "ml-collections>=1.1.0",
     "mujoco>=3.3.1",
     "notebook>=7.4.2",
@@ -63,10 +64,12 @@ humanoidverse = ["config/**/*", "data/**/*"]
 [tool.setuptools.packages.find]
 include = ["humanoidverse*"]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "ruff==0.9.6",
 ]
+
+[tool.uv]
 index-strategy = "unsafe-best-match"
 
 [tool.ruff]
